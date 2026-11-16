@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V13. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V14. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -118,6 +118,41 @@ module ring_gusset() {
     }
 }
 
+// Feather the gusset into the outside of the ring. Both ends finish
+// inside the existing ring surface, so there is no exposed end face.
+module ring_gusset_blend() {
+    segments = 72;
+    start_angle = -59;
+    end_angle = 35;
+    ramp_angle = 15;
+    // Z, then added radius. The upper edge also finishes inside the ring.
+    profile = [[0.01,1.94],[0.55,1.94],[2,1.62],[4,1.03],
+               [5.85,0.45],[6.22,0.27],[6.52,0.09],[6.75,0]];
+    levels = len(profile);
+    function index(a,z,wall) = 2*(a*levels+z)+wall;
+    function quad(a,b,c,d) = [[a,c,b],[a,d,c]];
+    points = [for (a = [0:segments], z = [0:levels-1], wall = [0:1])
+        let(angle = start_angle+(end_angle-start_angle)*a/segments,
+            t = min(1,(angle-start_angle)/ramp_angle,(end_angle-angle)/ramp_angle),
+            eased = t*t*(3-2*t),
+            radius = wall == 0 ? 26.65 : ring_radius-0.04+profile[z].y*eased)
+        [radius*cos(angle),radius*sin(angle),profile[z].x]];
+    faces = [
+        for (a = [0:segments-1], z = [0:levels-2]) each concat(
+            quad(index(a,z,1),index(a+1,z,1),index(a+1,z+1,1),index(a,z+1,1)),
+            quad(index(a,z,0),index(a,z+1,0),index(a+1,z+1,0),index(a+1,z,0))),
+        for (a = [0:segments-1]) each concat(
+            quad(index(a,0,0),index(a+1,0,0),index(a+1,0,1),index(a,0,1)),
+            quad(index(a,levels-1,0),index(a,levels-1,1),
+                 index(a+1,levels-1,1),index(a+1,levels-1,0))),
+        for (z = [0:levels-2]) each concat(
+            quad(index(0,z,0),index(0,z,1),index(0,z+1,1),index(0,z+1,0)),
+            quad(index(segments,z,0),index(segments,z+1,0),
+                 index(segments,z+1,1),index(segments,z,1)))
+    ];
+    polyhedron(points,faces,convexity=6);
+}
+
 module rounded_mount_ear(x) {
     hull() {
         for (dx = [-1.55,1.55])
@@ -204,6 +239,7 @@ module mount() {
     difference() {
         union() {
             ring_gusset();
+            ring_gusset_blend();
             triangular_brace(hole_xs[0],hole_xs[1]);
             upper_bridge(hole_xs);
 

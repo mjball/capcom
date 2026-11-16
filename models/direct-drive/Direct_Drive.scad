@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V25. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V26. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -132,7 +132,11 @@ module ring_to_cradle() {
             deck_z = cradle_floor_top+0.60*brace_fraction,
             fillet_radius = 3.4,
             fillet_z = min(1,max(0,(height-deck_z)/fillet_radius)),
-            fillet_below = smooth(min(1,max(0,height/deck_z))),
+            // Carry the fillet down to the flat seating plane at the brace-side
+            // runout. Feather the change across the adjacent ring sectors.
+            underside_blend = smooth(clamp01(min((angle+16)/12,(18-angle)/6))),
+            lower_fade = smooth(clamp01(height/deck_z)),
+            fillet_below = lower_fade+(1-lower_fade)*underside_blend,
             raw_fillet = fillet_radius*smooth(fillet_t)*fillet_below
                 *(1-sqrt(max(0,1-pow(1-fillet_z,2)))),
             shoulder_limit = max(0,32.12/max(0.01,cos(angle))-wall_radius),

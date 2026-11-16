@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V38. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V39. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, cap, cap_b, or assembly_b.
 // cap is the direct screw version. cap_b clips onto the stock horn.
@@ -510,30 +510,35 @@ module horn_blade_outline(extra=0) {
     }
 }
 
-// Flare the roof's rounded tip into the lid. The uppermost section
-// sits entirely inside the clip roof and the horn insertion face stays open.
+// Offset the entire footprint so the fillet wraps around the rounded
+// end and both faces of the clip. Bury the final section in the clip.
 module horn_root_section(angle) {
-    flare = 1-sin(angle);
-    roof_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance;
-    half_width = 0.62+0.72*flare;
-    z = pivot.z+lid_thickness-0.025+2.20*(1-cos(angle));
+    flare = 1.55*(1-sin(angle));
+    z = pivot.z+lid_thickness-0.025+2.70*(1-cos(angle));
+    mouth_y = pivot.y+horn_blade_bottom-0.40;
+    back_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance+1.35;
 
-    translate([0,roof_y+0.11+half_width,z])
+    translate([0,0,z])
         linear_extrude(height=0.01)
-            hull() {
-                translate([23.40-1.90*flare,0])
-                    scale([0.80,half_width]) circle(r=1,$fn=72);
-                translate([24.65+0.60*flare,0])
-                    scale([0.80,half_width]) circle(r=1,$fn=72);
-            }
+            offset(r=flare+0.14,$fn=72)
+                translate([22.1,mouth_y+0.15])
+                    square([2.15,back_y-mouth_y-0.30]);
 }
 
 module horn_root_fillet() {
-    for (angle=[0:3:87])
-        hull() {
-            horn_root_section(angle);
-            horn_root_section(angle+3);
-        }
+    difference() {
+        union()
+            for (angle=[0:3:87])
+                hull() {
+                    horn_root_section(angle);
+                    horn_root_section(angle+3);
+                }
+        // Keep the added material out of the blade's straight insertion path.
+        horn_coordinates()
+            translate([0,0,-6])
+                linear_extrude(height=6+stock_horn_total_thickness+horn_axial_clearance)
+                    horn_blade_outline(horn_side_clearance);
+    }
 }
 
 module horn_carrier() {

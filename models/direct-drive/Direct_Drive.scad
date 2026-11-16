@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V21. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V22. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -107,7 +107,7 @@ module rim() {
 module ring_to_cradle() {
     start_angle = -87;
     end_angle = 69;
-    segments = end_angle-start_angle;
+    segments = 2*(end_angle-start_angle);
     levels = 69;
     start_z = mount_underside_stock;
     function index(a,z,wall) = 2*(a*levels+z)+wall;
@@ -115,8 +115,14 @@ module ring_to_cradle() {
     function smooth(t) = t*t*t*(10+t*(-15+6*t));
     function rim_radius_at(a) =
         ring_radius*cos(1.5)/cos(a-3*floor(a/3)-1.5);
+    // Blend the outer wall directly into the straight rail boundary.
+    // The rounded max keeps the slope continuous across the old cutting edge.
+    function rail_runout(x) =
+        cradle_straight_edge_y-3.6*(1-smooth(max(0,min(1,(x-12)/8))));
+    function rounded_max(a,b,width) =
+        max(a,b)+pow(max(0,width-abs(a-b)),2)/(4*width);
     points = [for (a = [0:segments], z = [0:levels-1], wall = [0:1])
-        let(angle = start_angle+a,
+        let(angle = start_angle+a/2,
             t = min(1,(angle-start_angle)/61,(end_angle-angle)/68),
             h = z/(levels-1),
             height = start_z+(rim_height-start_z)*h,
@@ -139,8 +145,11 @@ module ring_to_cradle() {
             // Ease into the arm clearance envelope without a clipped flat.
             deck_fillet = shoulder_limit > 0
                 ? shoulder_limit*(1-exp(-raw_fillet/shoulder_limit)) : 0,
-            radius = wall == 0 ? 26.65 : wall_radius+deck_fillet)
-        [radius*cos(angle),radius*sin(angle),start_z+(rim_height-start_z)*h]];
+            radius = wall == 0 ? 26.65 : wall_radius+deck_fillet,
+            x = radius*cos(angle),
+            y = radius*sin(angle),
+            outside_y = wall == 0 ? y : rounded_max(y,rail_runout(x),0.90))
+        [x,outside_y,height]];
     faces = [
         for (a = [0:segments-1], z = [0:levels-2]) each concat(
             quad(index(a,z,1),index(a+1,z,1),index(a+1,z+1,1),index(a,z+1,1)),
@@ -211,17 +220,6 @@ module integrated_footing(hole_xs) {
                             translate([21,-25]) square([15,13]);
                         }
                     }
-}
-
-// Trim the highlighted stretch to the tangent of the cradle rail.
-module straight_edge_trim() {
-    runout = [for (i = [0:24])
-        let(t = i/24, u = t*t*(3-2*t))
-        [14+5*t,cradle_straight_edge_y-2.0*(1-u)]];
-    translate([0,0,mount_underside_stock-0.5])
-        linear_extrude(height=rim_height+1)
-            polygon(concat([[14,-30],[34,-30],[34,cradle_straight_edge_y]],
-                [for (i=[len(runout)-1:-1:0]) runout[i]]));
 }
 
 // Preserve the flat tab relief at the ears but roll it away from the
@@ -320,7 +318,6 @@ module mount() {
         // Trim the united footing and transition to one plane. The
         // lens thread mesh is a separate solid and is outside this cut.
         translate([-100,-100,mount_underside_z-100]) cube([200,200,100]);
-        straight_edge_trim();
         servo_rectangular_nose(rectangular_nose_clearance);
         servo_front_housing(0.35);
         rear_tab_relief();

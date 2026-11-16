@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V17. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V18. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -142,9 +142,8 @@ module ring_to_cradle() {
 
 module rounded_mount_ear(x) {
     hull() {
-        for (dx = [-1.55,1.55])
-            translate([x+dx,mount_face_y,1.37])
-                axial_cylinder(1.05,mount_plate_thickness);
+        translate([x-2.55,mount_face_y,0.40])
+            cube([5.10,mount_plate_thickness,0.70]);
         translate([x,mount_face_y,mount_hole_z])
             axial_cylinder(2.65,mount_plate_thickness);
     }
@@ -166,9 +165,35 @@ module upper_bridge(hole_xs) {
         }
 }
 
-module cradle_foot(x, y) {
-    translate([x,y,mount_underside_stock])
-        cylinder(r=3.15,h=cradle_floor_top-mount_underside_stock,$fn=72);
+// Build the low footing from one outline. Round inward corners in plan
+// before extruding it so the ring transition and the foot have one edge.
+module integrated_footing(hole_xs) {
+    foot_y = mount_face_y+mount_plate_thickness-3.35;
+    corner_radius = 1.60;
+    translate([0,0,mount_underside_stock])
+        linear_extrude(height=cradle_floor_top-mount_underside_stock,convexity=8)
+            offset(r=-corner_radius,$fn=120)
+                offset(r=corner_radius,$fn=120)
+                    union() {
+                        hull()
+                            for (x = hole_xs)
+                                translate([x,foot_y]) circle(r=3.15,$fn=120);
+
+                        // The full ear root is buried in these radiused ends.
+                        for (x = hole_xs)
+                            hull()
+                                for (dx = [-2.20,2.20],
+                                     y = [mount_face_y,mount_face_y+mount_plate_thickness])
+                                    translate([x+dx,y]) circle(r=0.70,$fn=72);
+
+                        // Merge only the local ring section on the footing
+                        // side, leaving the far side of the ring untouched.
+                        intersection() {
+                            projection(cut=true)
+                                translate([0,0,-cradle_floor_top]) ring_to_cradle();
+                            translate([21,-25]) square([15,13]);
+                        }
+                    }
 }
 
 module cradle_spine(x) {
@@ -224,23 +249,13 @@ module servo_front_housing(clearance=0) {
 module mount() {
     hole_xs = [mount_center_x-mount_hole_spacing/2,
                mount_center_x+mount_hole_spacing/2];
-    foot_y = mount_face_y + mount_plate_thickness - 3.15 - 0.2;
     difference() {
         union() {
             ring_to_cradle();
             triangular_brace(hole_xs[0],hole_xs[1]);
             upper_bridge(hole_xs);
 
-            // Keep the wide footing beneath the case. The retained spine
-            // rises only on the shaft side of the servo mounting plane.
-            hull() {
-                for (x = hole_xs) {
-                    cradle_foot(x,foot_y);
-                    translate([x,mount_face_y+mount_plate_thickness/2,
-                               mount_underside_stock])
-                        cylinder(r=0.85,h=cradle_floor_top-mount_underside_stock,$fn=48);
-                }
-            }
+            integrated_footing(hole_xs);
             hull() {
                 for (x = hole_xs) cradle_spine(x);
             }

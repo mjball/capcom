@@ -1,0 +1,62 @@
+{
+  "source": "https://www.thingiverse.com/thing:656038",
+  "parts": [
+    {
+      "file": "52mm_Lens_Cap-Base.STL",
+      "triangle_count": 6534,
+      "unique_vertex_count": 3267,
+      "bounds_min_mm": [
+        4.87495231628418,
+        27.31609344482422,
+        0.27788615226745605
+      ],
+      "bounds_max_mm": [
+        72.98856353759766,
+        32.81609344482422,
+        55.676109313964844
+      ],
+      "size_xyz_mm": [
+        68.11361122131348,
+        5.5,
+        55.39822316169739
+      ],
+      "centroid_of_vertices_mm": [
+        40.31634275033369,
+        29.37570966047823,
+        27.300180206963777
+      ],
+      "stl_header": "solid Lens Cap 52 - Base^Lens Cap 52-1"
+    },
+    {
+      "file": "52mm_Lens_Cap-Cap.STL",
+      "triangle_count": 3292,
+      "unique_vertex_count": 1648,
+      "bounds_min_mm": [
+        1.874951958656311,
+        29.81609344482422,
+        0.2830270528793335
+      ],
+      "bounds_max_mm": [
+        71.98856353759766,
+        34.116092681884766,
+        55.67097091674805
+      ],
+      "size_xyz_mm": [
+        70.11361157894135,
+        4.299999237060547,
+        55.38794386386871
+      ],
+      "centroid_of_vertices_mm": [
+        52.194974873919584,
+        31.817887919593215,
+        28.015727751132037
+      ],
+      "stl_header": "solid Lens Cap 52 - Cap^Lens Cap 52-1"
+    }
+  ],
+  "renders": [
+    "/Users/mball/Documents/ChatGPT/\ud83d\udd27 DIY/outputs/thingiverse_656038/52mm_Lens_Cap-Base_views.png",
+    "/Users/mball/Documents/ChatGPT/\ud83d\udd27 DIY/outputs/thingiverse_656038/52mm_Lens_Cap-Cap_views.png",
+    "/Users/mball/Documents/ChatGPT/\ud83d\udd27 DIY/outputs/thingiverse_656038/52mm_parts_annotated.png"
+  ]
+}

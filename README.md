@@ -2,7 +2,11 @@
 
 A desk-controlled motorized lens cap for the Canon RF 35 mm F1.8 Macro IS STM, using its 52 mm filter thread.
 
-The direct drive OpenSCAD model lives at [models/direct-drive/Direct_Drive.scad](models/direct-drive/Direct_Drive.scad). Its Git history contains the draft and V2 through V7. See [hardware and controls](docs/hardware.md) for the DigiKey parts list.
+The active design is the direct-drive OpenSCAD model at [models/direct-drive/Direct_Drive.scad](models/direct-drive/Direct_Drive.scad). Each CAD revision is archived as a separate commit at that path. See [hardware and controls](docs/hardware.md) for the DigiKey parts list.
+
+## Shelved designs and research
+
+The earlier four-bar linkage design is no longer active. Its Python tooling, calculated animations, numerical verification, design notes, and upstream-mesh research are retained in the [shelved linkage archive](archive/shelved-linkage/README.md) for reference. Nothing in that archive should be read as the current fabrication plan.
 
 ## Third-party attribution
 

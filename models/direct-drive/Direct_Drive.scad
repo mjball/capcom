@@ -87,19 +87,56 @@ module rounded_mount_ear(x) {
     }
 }
 
+module cradle_foot(x, y) {
+    translate([x,y,0.25]) cylinder(r=3.15,h=1.4,$fn=72);
+}
+
+module cradle_spine(x) {
+    hull() {
+        translate([x,mount_face_y,1.84])
+            axial_cylinder(1.0,mount_plate_thickness);
+        translate([x-1,mount_face_y,0.9])
+            cube([2,mount_plate_thickness,0.3]);
+    }
+}
+
 module mount() {
     hole_xs = [mount_center_x-mount_hole_spacing/2,
                mount_center_x+mount_hole_spacing/2];
+    foot_y = mount_face_y + mount_plate_thickness - 3.15 - 0.2;
     difference() {
         union() {
             ring_gusset();
+
+            // Keep the wide footing beneath the case. The retained spine
+            // rises only on the shaft side of the servo mounting plane.
             hull() {
-                for (x = hole_xs)
-                    translate([x,-16.15,0.25])
-                        cylinder(r=1.65,h=1.4,$fn=48);
+                for (x = hole_xs) {
+                    cradle_foot(x,foot_y);
+                    translate([x,mount_face_y+mount_plate_thickness/2,0.25])
+                        cylinder(r=0.85,h=1.4,$fn=48);
+                }
             }
-            for (x = hole_xs) rounded_mount_ear(x);
+            hull() {
+                for (x = hole_xs) cradle_spine(x);
+            }
+
+            // Run both screw bosses into the rail over a gradual taper.
+            // This gives the ears a broad root through the print layers.
+            for (i = [0,1]) {
+                x = hole_xs[i];
+                slope_end = x + (hole_xs[1-i]-x)*0.40;
+                hull() {
+                    rounded_mount_ear(x);
+                    cradle_spine(slope_end);
+                }
+            }
         }
+        // Leave running clearance around the servo's output wheel.
+        translate([pivot.x,mount_face_y-0.1,pivot.z])
+            axial_cylinder(servo_wheel_radius+0.45,pivot.y-mount_face_y+0.2);
+        // The flared footing can touch the bore when the tab spacing changes.
+        translate([0,0,0.15]) cylinder(r=rim_inner_radius,h=11);
         for (x = hole_xs)
             translate([x,mount_face_y-0.25,mount_hole_z])
                 axial_cylinder(mount_hole_diameter/2,mount_plate_thickness+0.5);

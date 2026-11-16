@@ -39,10 +39,9 @@ module original_interface() {
         rotate([90, 0, 0])
             translate([-39.28856, -29.816093, -27.976998])
                 import("52mm_Lens_Cap-Base.STL", convexity=12);
-        union() {
-            translate([-100, -100, -10]) cube([200, 200, 10.001]);
-            translate([0, 0, -0.001]) cylinder(r=27.74, h=3.01);
-        }
+        // One full-depth trim removes the hinge and latch, including the
+        // slivers at their roots. The thread crests fit within r = 26.21.
+        translate([0,0,-3]) cylinder(r=27.72,h=6.5,$fn=360);
     }
 }
 
@@ -57,26 +56,53 @@ module rim() {
     }
 }
 
+// Rounded pads define a continuous tapered web. The high section stays
+// on the lens side of the hub. The rail under the servo stays below its case.
+module web_pad(x, y, z, radius) {
+    translate([x,y,z]) cylinder(r=radius,h=0.25,$fn=48);
+}
+
+module ring_gusset() {
+    difference() {
+        hull() {
+            for (angle = [-40,-25,-10,5,16]) {
+                web_pad(27.1*cos(angle),27.1*sin(angle),0.25,2.35);
+                web_pad(26.8*cos(angle),26.8*sin(angle),5.85,1.15);
+            }
+            web_pad(29.5,-15.9,0.25,2.25);
+            web_pad(29.5,-15.9,5.85,1.15);
+        }
+        // Maintain the full aperture even where the arc pads meet.
+        translate([0,0,0.15]) cylinder(r=rim_inner_radius,h=6.1);
+    }
+}
+
+module rounded_mount_ear(x) {
+    hull() {
+        for (dx = [-1.55,1.55])
+            translate([x+dx,mount_face_y,1.25])
+                axial_cylinder(1.05,mount_plate_thickness);
+        translate([x,mount_face_y,mount_hole_z])
+            axial_cylinder(2.65,mount_plate_thickness);
+    }
+}
+
 module mount() {
     hole_xs = [mount_center_x-mount_hole_spacing/2,
                mount_center_x+mount_hole_spacing/2];
     difference() {
         union() {
-            // A low rail sits behind the servo case, with a gusset into the ring.
+            ring_gusset();
             hull() {
-                translate([22,-17.5,0.20]) cube([4,4,3.3]);
-                translate([hole_xs[0]-3,mount_face_y,0.20])
-                    cube([6,mount_plate_thickness,3.2]);
+                for (x = hole_xs)
+                    translate([x,-16.15,0.25])
+                        cylinder(r=1.65,h=1.4,$fn=48);
             }
-            translate([hole_xs[0]-3,mount_face_y,0.20])
-                cube([mount_hole_spacing+6,mount_plate_thickness,1.35]);
-            for (x = hole_xs)
-                translate([x-3,mount_face_y,0.20])
-                    cube([6,mount_plate_thickness,mount_hole_z+2.6-0.20]);
+            for (x = hole_xs) rounded_mount_ear(x);
         }
         for (x = hole_xs)
-            translate([x,mount_face_y-0.1,mount_hole_z])
-                axial_cylinder(mount_hole_diameter/2,mount_plate_thickness+0.2);
+            translate([x,mount_face_y-0.25,mount_hole_z])
+                axial_cylinder(mount_hole_diameter/2,mount_plate_thickness+0.5);
     }
 }
 

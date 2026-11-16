@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V18. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V19. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -55,6 +55,9 @@ mount_plate_thickness = 1.9;
 hub_radius = 4.8;
 brace_thickness = 2.0;
 cradle_floor_top = 1.65;
+cradle_rail_radius = 3.15;
+cradle_rail_y = mount_face_y+mount_plate_thickness-3.35;
+cradle_straight_edge_y = cradle_rail_y-cradle_rail_radius;
 mount_underside_z = 0; // Same datum as the lens seating shoulder.
 mount_underside_stock = mount_underside_z-0.10;
 upper_bridge_radius = 1.30;
@@ -105,7 +108,7 @@ module ring_to_cradle() {
     start_angle = -87;
     end_angle = 69;
     segments = end_angle-start_angle;
-    levels = 21;
+    levels = 41;
     start_z = mount_underside_stock;
     function index(a,z,wall) = 2*(a*levels+z)+wall;
     function quad(a,b,c,d) = [[a,c,b],[a,d,c]];
@@ -121,7 +124,14 @@ module ring_to_cradle() {
             // The narrow lobe reaches the near servo foot at its lower end.
             lobe_t = max(0,min(1,(angle+63)/29,(-13-angle)/21)),
             lobe = 7.55*smooth(lobe_t)*(1-smooth(max(0,min(1,height/5)))),
-            excess = 1.94*smooth(t)*(1-smooth(h))+lobe,
+            // Quarter-round blend from the footing deck into the ring wall.
+            // Fade it in plan so both ends disappear into the existing wall.
+            fillet_t = max(0,min(1,(angle+75)/25,(-28-angle)/22)),
+            fillet_z = min(1,max(0,(height-cradle_floor_top)/2.5)),
+            fillet_below = smooth(min(1,max(0,height/cradle_floor_top))),
+            deck_fillet = 2.5*smooth(fillet_t)*fillet_below
+                *(1-sqrt(max(0,1-pow(1-fillet_z,2)))),
+            excess = 1.94*smooth(t)*(1-smooth(h))+lobe+deck_fillet,
             radius = wall == 0 ? 26.65 : rim_radius_at(angle)+excess)
         [radius*cos(angle),radius*sin(angle),start_z+(rim_height-start_z)*h]];
     faces = [
@@ -168,7 +178,6 @@ module upper_bridge(hole_xs) {
 // Build the low footing from one outline. Round inward corners in plan
 // before extruding it so the ring transition and the foot have one edge.
 module integrated_footing(hole_xs) {
-    foot_y = mount_face_y+mount_plate_thickness-3.35;
     corner_radius = 1.60;
     translate([0,0,mount_underside_stock])
         linear_extrude(height=cradle_floor_top-mount_underside_stock,convexity=8)
@@ -176,8 +185,9 @@ module integrated_footing(hole_xs) {
                 offset(r=corner_radius,$fn=120)
                     union() {
                         hull()
-                            for (x = hole_xs)
-                                translate([x,foot_y]) circle(r=3.15,$fn=120);
+                            for (x = concat([18],hole_xs))
+                                translate([x,cradle_rail_y])
+                                    circle(r=cradle_rail_radius,$fn=120);
 
                         // The full ear root is buried in these radiused ends.
                         for (x = hole_xs)
@@ -194,6 +204,17 @@ module integrated_footing(hole_xs) {
                             translate([21,-25]) square([15,13]);
                         }
                     }
+}
+
+// Trim the highlighted stretch to the tangent of the cradle rail.
+module straight_edge_trim() {
+    runout = [for (i = [0:24])
+        let(t = i/24, u = t*t*(3-2*t))
+        [14+5*t,cradle_straight_edge_y-2.0*(1-u)]];
+    translate([0,0,mount_underside_stock-0.5])
+        linear_extrude(height=rim_height+1)
+            polygon(concat([[14,-30],[34,-30],[34,cradle_straight_edge_y]],
+                [for (i=[len(runout)-1:-1:0]) runout[i]]));
 }
 
 module cradle_spine(x) {
@@ -274,6 +295,7 @@ module mount() {
         // Trim the united footing and transition to one plane. The
         // lens thread mesh is a separate solid and is outside this cut.
         translate([-100,-100,mount_underside_z-100]) cube([200,200,100]);
+        straight_edge_trim();
         servo_rectangular_nose(rectangular_nose_clearance);
         servo_front_housing(0.35);
         // Keep the tab seating plane clear on its servo side. Only the

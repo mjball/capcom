@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V19. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V20. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -108,7 +108,7 @@ module ring_to_cradle() {
     start_angle = -87;
     end_angle = 69;
     segments = end_angle-start_angle;
-    levels = 41;
+    levels = 69;
     start_z = mount_underside_stock;
     function index(a,z,wall) = 2*(a*levels+z)+wall;
     function quad(a,b,c,d) = [[a,c,b],[a,d,c]];
@@ -124,15 +124,22 @@ module ring_to_cradle() {
             // The narrow lobe reaches the near servo foot at its lower end.
             lobe_t = max(0,min(1,(angle+63)/29,(-13-angle)/21)),
             lobe = 7.55*smooth(lobe_t)*(1-smooth(max(0,min(1,height/5)))),
-            // Quarter-round blend from the footing deck into the ring wall.
-            // Fade it in plan so both ends disappear into the existing wall.
-            fillet_t = max(0,min(1,(angle+75)/25,(-28-angle)/22)),
-            fillet_z = min(1,max(0,(height-cradle_floor_top)/2.5)),
-            fillet_below = smooth(min(1,max(0,height/cradle_floor_top))),
-            deck_fillet = 2.5*smooth(fillet_t)*fillet_below
+            // The inside seam runs from the cradle onto the brace deck.
+            // Carry the blend past the outward lobe and across that seam.
+            wall_radius = rim_radius_at(angle)+1.94*smooth(t)*(1-smooth(h))+lobe,
+            fillet_t = max(0,min(1,(angle+66)/27,(18-angle)/18)),
+            brace_fraction = smooth(max(0,min(1,(angle+41)/21))),
+            deck_z = cradle_floor_top+0.60*brace_fraction,
+            fillet_radius = 3.4,
+            fillet_z = min(1,max(0,(height-deck_z)/fillet_radius)),
+            fillet_below = smooth(min(1,max(0,height/deck_z))),
+            raw_fillet = fillet_radius*smooth(fillet_t)*fillet_below
                 *(1-sqrt(max(0,1-pow(1-fillet_z,2)))),
-            excess = 1.94*smooth(t)*(1-smooth(h))+lobe+deck_fillet,
-            radius = wall == 0 ? 26.65 : rim_radius_at(angle)+excess)
+            shoulder_limit = max(0,32.12/max(0.01,cos(angle))-wall_radius),
+            // Ease into the arm clearance envelope without a clipped flat.
+            deck_fillet = shoulder_limit > 0
+                ? shoulder_limit*(1-exp(-raw_fillet/shoulder_limit)) : 0,
+            radius = wall == 0 ? 26.65 : wall_radius+deck_fillet)
         [radius*cos(angle),radius*sin(angle),start_z+(rim_height-start_z)*h]];
     faces = [
         for (a = [0:segments-1], z = [0:levels-2]) each concat(

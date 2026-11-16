@@ -1,24 +1,39 @@
-// Canon RF 35 mm direct drive cap, V6. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V7. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
 open_angle = 135;
 display_angle = 0;
 
-// Servo fit estimates. Confirm these against the actual SER0049 before export.
-servo_body_length = 23;
-servo_body_width = 12.2;
-servo_body_depth = 20;
-mount_hole_spacing = 28;
-mount_hole_diameter = 2.3;
-shaft_from_body_end = 6;
+// Measured SER0049 and stock horn dimensions, all in mm.
+servo_body_length = 22.78;
+servo_body_width = 12.06;
+servo_body_depth = 23.38;  // Rear face to tab seating plane.
+servo_tab_thickness = 2.44;
+servo_tab_hole_diameter = 2.00;
+mount_hole_spacing = 27.40;
+mount_hole_diameter = 2.30; // Clearance for nominal 2 mm mounting screws.
+shaft_from_body_end = 5.79;
 mount_hole_z_offset = 0;
+shaft_tip_from_rear = 31.26;
+housing_shoulder_from_tabs = 4.59;
+housing_shoulder_diameter = 11.58;
+shaft_diameter = 4.74;
 
-// Smooth friction hub. Replace all four placeholders before print export.
-shaft_recess_diameter = 5.4;
-shaft_recess_depth = 1.8;
-screw_clearance_diameter = 2.2;
-screw_seat_thickness = 1.8;
+// Installed stock horn establishes the axial position of the rotating hub.
+installed_horn_top_from_rear = 33.14;
+stock_horn_total_thickness = 4.15;
+shaft_recess_depth = shaft_tip_from_rear
+    - (installed_horn_top_from_rear-stock_horn_total_thickness);
+shaft_recess_diameter = shaft_diameter+0.14;
+screw_thread_diameter = 2.00;
+screw_under_head_length = 7.70;
+screw_head_diameter = 5.00;
+screw_clearance_diameter = screw_thread_diameter+0.25;
+screw_head_recess_diameter = screw_head_diameter+0.30;
+screw_head_recess_depth = 1.10;
+screw_seat_thickness = stock_horn_total_thickness
+    - shaft_recess_depth-screw_head_recess_depth;
 
 $fn = 120;
 ring_radius = 27.7;
@@ -27,11 +42,12 @@ rim_inner_radius = 25.7;
 lid_radius = 28.2;
 lid_thickness = 1.6;
 pivot = [38, -14, 8];
-mount_face_y = -16.4;
+mount_face_y = pivot.y - (installed_horn_top_from_rear
+    - stock_horn_total_thickness-servo_body_depth);
 mount_center_x = pivot.x + servo_body_length/2 - shaft_from_body_end;
 mount_hole_z = pivot.z + mount_hole_z_offset;
 mount_plate_thickness = 1.9;
-servo_wheel_radius = 4.4;
+
 hub_radius = 4.8;
 brace_thickness = 2.0;
 
@@ -71,8 +87,8 @@ module ring_gusset() {
                 web_pad(27.1*cos(angle),27.1*sin(angle),0.25,2.35);
                 web_pad(26.8*cos(angle),26.8*sin(angle),5.85,1.15);
             }
-            web_pad(29.5,-15.9,0.25,2.25);
-            web_pad(29.5,-15.9,5.85,1.15);
+            web_pad(29.5,mount_face_y+0.5,0.25,2.25);
+            web_pad(29.5,mount_face_y+0.5,5.85,1.15);
         }
         // Maintain the full aperture even where the arc pads meet.
         translate([0,0,0.15]) cylinder(r=rim_inner_radius,h=6.1);
@@ -120,6 +136,18 @@ module triangular_brace(near_x, far_x) {
     }
 }
 
+// Clearance envelope for the raised housing and its visible side lobe.
+// The lobe is conservatively covered by extending the shoulder outline
+// toward the long end of the body. Its exact outline was not measured.
+module servo_front_housing(clearance=0) {
+    radius = housing_shoulder_diameter/2+clearance;
+    hull() {
+        for (dx = [0,6])
+            translate([pivot.x+dx,mount_face_y-0.01,pivot.z])
+                axial_cylinder(radius,housing_shoulder_from_tabs+0.01+clearance);
+    }
+}
+
 module mount() {
     hole_xs = [mount_center_x-mount_hole_spacing/2,
                mount_center_x+mount_hole_spacing/2];
@@ -153,9 +181,7 @@ module mount() {
                 }
             }
         }
-        // Leave running clearance around the servo's output wheel.
-        translate([pivot.x,mount_face_y-0.1,pivot.z])
-            axial_cylinder(servo_wheel_radius+0.45,pivot.y-mount_face_y+0.2);
+        servo_front_housing(0.35);
         // The flared footing can touch the bore when the tab spacing changes.
         translate([0,0,0.15]) cylinder(r=rim_inner_radius,h=11);
         for (x = hole_xs)
@@ -212,7 +238,7 @@ module reinforced_arm(total_depth) {
 }
 
 module lid_closed() {
-    total_depth = shaft_recess_depth + screw_seat_thickness;
+    total_depth = shaft_recess_depth + screw_seat_thickness + screw_head_recess_depth;
     difference() {
         union() {
             translate([0,0,pivot.z]) cylinder(r=lid_radius,h=lid_thickness);
@@ -223,6 +249,8 @@ module lid_closed() {
             axial_cylinder(shaft_recess_diameter/2,shaft_recess_depth+0.10);
         translate(pivot+[0,-0.10,0])
             axial_cylinder(screw_clearance_diameter/2,total_depth+0.20);
+        translate(pivot+[0,shaft_recess_depth+screw_seat_thickness,0])
+            axial_cylinder(screw_head_recess_diameter/2,screw_head_recess_depth+0.10);
     }
 }
 
@@ -234,8 +262,10 @@ module servo_envelope() {
     translate([mount_center_x-servo_body_length/2,
                mount_face_y-servo_body_depth, pivot.z-servo_body_width/2])
         cube([servo_body_length,servo_body_depth,servo_body_width]);
-    translate([pivot.x,mount_face_y,pivot.z])
-        axial_cylinder(servo_wheel_radius,pivot.y-mount_face_y);
+    servo_front_housing();
+    translate([pivot.x,mount_face_y+housing_shoulder_from_tabs,pivot.z])
+        axial_cylinder(shaft_diameter/2,
+            shaft_tip_from_rear-servo_body_depth-housing_shoulder_from_tabs);
 }
 
 if (part == "base") base();

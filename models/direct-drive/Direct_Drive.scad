@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V10. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V11. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -144,6 +144,36 @@ module cradle_foot(x, y) {
     translate([x,y,0.25]) cylinder(r=3.15,h=cradle_floor_top-0.25,$fn=72);
 }
 
+// Blend each upright into the low pad with a rounded transition. The
+// upper cross-section is inside the ear, so it does not create a new ledge.
+module ear_root_slice(x, z, flare) {
+    corner = 0.30;
+    half_x = 2.35 + 1.45*flare;
+    half_y = mount_plate_thickness/2 + 1.15*flare;
+    hull() {
+        for (dx = [-1,1], dy = [-1,1])
+            translate([x+dx*(half_x-corner),
+                       mount_face_y+mount_plate_thickness/2+dy*(half_y-corner),z])
+                cylinder(r=corner,h=0.04,$fn=32);
+    }
+}
+
+module ear_root_fillet(x) {
+    blend_height = 1.50;
+    hull() {
+        ear_root_slice(x,cradle_floor_top-0.14,1);
+        ear_root_slice(x,cradle_floor_top,1);
+    }
+    for (i = [0:7])
+        hull() {
+            for (step = [i,i+1]) {
+                angle = 90*step/8;
+                ear_root_slice(x,cradle_floor_top+blend_height*(1-cos(angle)),
+                               1-sin(angle));
+            }
+        }
+}
+
 module cradle_spine(x) {
     hull() {
         translate([x,mount_face_y,1.84])
@@ -192,6 +222,7 @@ module mount() {
             ring_gusset();
             triangular_brace(hole_xs[0],hole_xs[1]);
             upper_bridge(hole_xs);
+            for (x = hole_xs) ear_root_fillet(x);
 
             // Keep the wide footing beneath the case. The retained spine
             // rises only on the shaft side of the servo mounting plane.

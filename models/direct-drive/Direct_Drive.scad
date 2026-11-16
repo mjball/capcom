@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V36. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V37. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, cap, cap_b, or assembly_b.
 // cap is the direct screw version. cap_b clips onto the stock horn.
@@ -510,6 +510,29 @@ module horn_blade_outline(extra=0) {
     }
 }
 
+// Rounded sections follow a quarter ellipse from the lid into the clip roof.
+module horn_bridge_section(angle) {
+    z = pivot.z+lid_thickness-0.04+3.70*(1-cos(angle));
+    inner_x = 19.0+4.55*sin(angle);
+    center_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance
+        +1.65-0.95*sin(angle);
+    half_width = 1.65-0.95*sin(angle);
+    translate([0,center_y,z])
+        linear_extrude(height=0.02)
+            hull() {
+                translate([inner_x,0]) scale([1.0,half_width]) circle(r=1,$fn=72);
+                translate([24.35,0]) scale([1.0,half_width]) circle(r=1,$fn=72);
+            }
+}
+
+module horn_bridge() {
+    for (angle=[0:5:85])
+        hull() {
+            horn_bridge_section(angle);
+            horn_bridge_section(angle+5);
+        }
+}
+
 module horn_carrier() {
     lip_start = horn_blade_bottom-0.40;
     roof_bottom = stock_horn_total_thickness+horn_axial_clearance;
@@ -523,14 +546,7 @@ module horn_carrier() {
                             translate([6,0]) circle(r=3.90,$fn=72);
                             translate([horn_tip_center,0]) circle(r=2.95,$fn=72);
                         }
-            // A tapered bridge ties the receiver roof into the disk.
-            hull() {
-                horn_coordinates()
-                    translate([12.7,0,roof_bottom+0.15])
-                        cylinder(r=1.9,h=1.05,$fn=72);
-                translate([22.0,-9.1,pivot.z+0.12])
-                    cylinder(r=2.2,h=1.0,$fn=72);
-            }
+            horn_bridge();
         }
         horn_coordinates() {
             // Leave the stock horn hub and its retained screw accessible.

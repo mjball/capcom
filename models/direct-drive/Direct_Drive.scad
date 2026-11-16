@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V12. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V13. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -18,6 +18,10 @@ mount_hole_z_offset = 0;
 shaft_tip_from_rear = 31.26;
 housing_shoulder_from_tabs = 4.59;
 housing_shoulder_diameter = 11.58;
+// The rectangular face is forward of the tabs and behind the shoulder.
+// Use the full measured tab-to-shoulder distance as the clearance limit.
+rectangular_nose_keepout_depth = housing_shoulder_from_tabs;
+rectangular_nose_clearance = 0.30;
 shaft_diameter = 4.74;
 
 // Installed stock horn establishes the axial position of the rotating hub.
@@ -140,26 +144,6 @@ module upper_bridge(hole_xs) {
         }
 }
 
-// Root reinforcement stays within the thickness of the ear. The
-// rounded shoulders grow out of a full-depth toe instead of a thin lip.
-module supported_ear_root(x) {
-    toe_floor = 0.25;
-    face_inset = 0.10;
-    neck_half_width = 2.30;
-    root_radius = 1.25;
-    arc = [for (i = [0:12])
-        let(a = i*90/12)
-        [neck_half_width+root_radius*(1-sin(a)),
-         cradle_floor_top+root_radius*(1-cos(a))]];
-    outer = neck_half_width+root_radius;
-    outline = concat([[-outer,toe_floor],[outer,toe_floor]],
-        arc, [for (i = [len(arc)-1:-1:0]) [-arc[i].x,arc[i].y]]);
-    translate([x,mount_face_y+mount_plate_thickness-face_inset,0])
-        rotate([90,0,0])
-            linear_extrude(height=mount_plate_thickness-2*face_inset)
-                polygon(outline);
-}
-
 module cradle_foot(x, y) {
     translate([x,y,0.25]) cylinder(r=3.15,h=cradle_floor_top-0.25,$fn=72);
 }
@@ -191,6 +175,16 @@ module triangular_brace(near_x, far_x) {
     }
 }
 
+// Conservative rectangular nose envelope, also shown in assembly view.
+module servo_rectangular_nose(clearance=0) {
+    translate([pivot.x-shaft_from_body_end-clearance,
+               mount_face_y-0.05,
+               pivot.z-servo_body_width/2-clearance])
+        cube([servo_body_length+2*clearance,
+              rectangular_nose_keepout_depth+0.05+clearance,
+              servo_body_width+2*clearance]);
+}
+
 // Clearance envelope for the raised housing and its visible side lobe.
 // The lobe is conservatively covered by extending the shoulder outline
 // toward the long end of the body. Its exact outline was not measured.
@@ -212,7 +206,6 @@ module mount() {
             ring_gusset();
             triangular_brace(hole_xs[0],hole_xs[1]);
             upper_bridge(hole_xs);
-            for (x = hole_xs) supported_ear_root(x);
 
             // Keep the wide footing beneath the case. The retained spine
             // rises only on the shaft side of the servo mounting plane.
@@ -238,6 +231,7 @@ module mount() {
                 }
             }
         }
+        servo_rectangular_nose(rectangular_nose_clearance);
         servo_front_housing(0.35);
         // Keep the tab seating plane clear on its servo side. Only the
         // low footing can extend behind it, beneath the case and tabs.
@@ -324,6 +318,7 @@ module servo_envelope() {
     translate([mount_center_x-servo_body_length/2,
                mount_face_y-servo_body_depth, pivot.z-servo_body_width/2])
         cube([servo_body_length,servo_body_depth,servo_body_width]);
+    servo_rectangular_nose();
     servo_front_housing();
     translate([pivot.x,mount_face_y+housing_shoulder_from_tabs,pivot.z])
         axial_cylinder(shaft_diameter/2,

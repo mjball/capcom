@@ -32,6 +32,7 @@ mount_hole_z = pivot.z + mount_hole_z_offset;
 mount_plate_thickness = 1.9;
 servo_wheel_radius = 4.4;
 hub_radius = 4.8;
+brace_thickness = 2.0;
 
 // Original lens-facing geometry is at z <= 0 after this rigid transform.
 module original_interface() {
@@ -100,6 +101,24 @@ module cradle_spine(x) {
     }
 }
 
+// A shallow diaphragm ties the far servo ear back to the ring.
+module triangular_brace(near_x, far_x) {
+    floor = 0.25;
+    lip = 0.20;
+    corner_r = 0.75;
+    // Keep the entire brace on the shaft side of the servo seating plane.
+    rail_y = mount_face_y + corner_r + 0.12;
+    corners = [[26.6,0.2], [near_x-2.2,rail_y], [far_x,rail_y]];
+    hull() {
+        for (corner = corners) {
+            translate([corner.x,corner.y,floor])
+                cylinder(r=corner_r,h=brace_thickness-lip,$fn=48);
+            translate([corner.x,corner.y,floor+brace_thickness-lip])
+                cylinder(r1=corner_r,r2=0.50,h=lip,$fn=48);
+        }
+    }
+}
+
 module mount() {
     hole_xs = [mount_center_x-mount_hole_spacing/2,
                mount_center_x+mount_hole_spacing/2];
@@ -107,6 +126,7 @@ module mount() {
     difference() {
         union() {
             ring_gusset();
+            triangular_brace(hole_xs[0],hole_xs[1]);
 
             // Keep the wide footing beneath the case. The retained spine
             // rises only on the shaft side of the servo mounting plane.

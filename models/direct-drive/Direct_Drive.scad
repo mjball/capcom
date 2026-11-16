@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V9. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V10. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -63,10 +63,23 @@ module original_interface() {
             translate([-39.28856, -29.816093, -27.976998])
                 original_base_mesh();
         // One full-depth trim removes the hinge and latch, including the
-        // slivers at their roots. Keep the original thread gap until the
-        // mating thread across the gap can be verified.
+        // slivers at their roots. The lens-facing thread gap is preserved.
         translate([0,0,-3]) cylinder(r=27.72,h=6.5,$fn=360);
     }
+}
+
+// Rejoin the smooth barrel wall across the old latch notch. This sector
+// begins above z=0, where the original lens threads end.
+module notch_wall_fill() {
+    start_z = 0.01;
+    end_z = 3.0;
+    inner_r = 24.2;
+    outer_r = 27.7;
+    half_angle = 16;
+    rotate([0,0,180-half_angle])
+        rotate_extrude(angle=2*half_angle,$fn=360)
+            translate([inner_r,start_z])
+                square([outer_r-inner_r,end_z-start_z]);
 }
 
 module axial_cylinder(radius, length) {
@@ -220,6 +233,7 @@ module mount() {
 module base() {
     union() {
         original_interface();
+        notch_wall_fill();
         rim();
         mount();
     }

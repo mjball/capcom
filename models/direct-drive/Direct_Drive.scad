@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V8. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V9. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -50,6 +50,7 @@ mount_plate_thickness = 1.9;
 
 hub_radius = 4.8;
 brace_thickness = 2.0;
+cradle_floor_top = 1.65;
 upper_bridge_radius = 1.30;
 upper_bridge_air_gap = 0.51;
 upper_bridge_z = pivot.z + housing_shoulder_diameter/2
@@ -127,7 +128,7 @@ module upper_bridge(hole_xs) {
 }
 
 module cradle_foot(x, y) {
-    translate([x,y,0.25]) cylinder(r=3.15,h=1.4,$fn=72);
+    translate([x,y,0.25]) cylinder(r=3.15,h=cradle_floor_top-0.25,$fn=72);
 }
 
 module cradle_spine(x) {
@@ -185,7 +186,7 @@ module mount() {
                 for (x = hole_xs) {
                     cradle_foot(x,foot_y);
                     translate([x,mount_face_y+mount_plate_thickness/2,0.25])
-                        cylinder(r=0.85,h=1.4,$fn=48);
+                        cylinder(r=0.85,h=cradle_floor_top-0.25,$fn=48);
                 }
             }
             hull() {
@@ -204,6 +205,10 @@ module mount() {
             }
         }
         servo_front_housing(0.35);
+        // Keep the tab seating plane clear on its servo side. Only the
+        // low footing can extend behind it, beneath the case and tabs.
+        translate([-100,mount_face_y-100,cradle_floor_top])
+            cube([200,100,100]);
         // The flared footing can touch the bore when the tab spacing changes.
         translate([0,0,0.15]) cylinder(r=rim_inner_radius,h=11);
         for (x = hole_xs)

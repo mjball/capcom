@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V39. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V40. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, cap, cap_b, or assembly_b.
 // cap is the direct screw version. cap_b clips onto the stock horn.
@@ -525,14 +525,43 @@ module horn_root_section(angle) {
                     square([2.15,back_y-mouth_y-0.30]);
 }
 
+// The web rises toward the closed end of the clip and widens at the lid.
+module horn_web_section(t) {
+    x = 16.9+7.0*t;
+    roof_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance;
+    bottom = pivot.z+lid_thickness-0.10;
+    rise = 4.9*t*t*(3-2*t);
+    half_width = 0.35+0.27*t+0.37*sin(180*t);
+
+    translate([x-0.015,roof_y+0.64,bottom])
+        rotate([0,90,0])
+            scale([0.07+rise,half_width,1]) cylinder(r=1,h=0.03,$fn=72);
+}
+
+module horn_web() {
+    steps = 24;
+    intersection() {
+        translate([0,-20,pivot.z+lid_thickness-0.11])
+            cube([30,20,10]);
+        union()
+            for (step=[0:steps-1])
+                hull() {
+                    horn_web_section(step/steps);
+                    horn_web_section((step+1)/steps);
+                }
+    }
+}
+
 module horn_root_fillet() {
     difference() {
-        union()
+        union() {
+            horn_web();
             for (angle=[0:3:87])
                 hull() {
                     horn_root_section(angle);
                     horn_root_section(angle+3);
                 }
+        }
         // Keep the added material out of the blade's straight insertion path.
         horn_coordinates()
             translate([0,0,-6])

@@ -1,0 +1,26 @@
+{
+  "frame_count": 120,
+  "fixed_servo_pivot_mm": [
+    -31.0,
+    -13.0
+  ],
+  "fixed_cap_hinge_mm": [
+    0.0,
+    0.0
+  ],
+  "servo_start_angle_deg": -13.185860497789589,
+  "cap_lever_start_angle_deg": -3.305701454944217,
+  "servo_travel_deg": -155.0,
+  "cap_travel_deg": -135.0,
+  "maximum_servo_horn_length_error_mm": 5.329070518200751e-15,
+  "maximum_cap_lever_length_error_mm": 3.552713678800501e-15,
+  "maximum_connecting_rod_length_error_mm": 7.105427357601002e-15,
+  "maximum_cap_attachment_rigidity_error_mm": 5.617333549722722e-15,
+  "maximum_cap_body_edge_length_error_mm": 7.105427357601002e-15,
+  "cap_body_lens_collision_frames": 0,
+  "cap_body_servo_collision_frames": 0,
+  "cap_bracket_lens_collision_frames": 0,
+  "cap_bracket_servo_collision_frames": 0,
+  "opening_motion_is_monotonic": true,
+  "all_checks_passed": true
+}

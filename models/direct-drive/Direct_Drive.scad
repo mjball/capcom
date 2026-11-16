@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V5. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V6. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -173,10 +173,25 @@ module base() {
 }
 
 // Round cross-sections spread bending loads from the hub into the lid.
-// The larger shoulder and the shallow lid pad give the arm a gradual taper.
+// The larger shoulder carries the load into the flared lid root.
 module arm_shoulder() {
     translate(pivot+[-3.5,0.85,1.50])
         axial_cylinder(2.20,5.00);
+}
+
+// Elliptical sections progressively widen and settle into the lid plane.
+// The inner section is completely inside the lid, so the flare ends flush.
+module lid_root_section(t) {
+    eased = t*t*(3-2*t);
+    x = 18 + 10*t;
+    y = -7.0 - 2.6*eased;
+    half_width = 4.5 - 1.8*eased;
+    low = pivot.z + 0.02 - 0.47*eased;
+    high = pivot.z + lid_thickness - 0.02 + 1.62*eased;
+    translate([x-0.025,y,(low+high)/2])
+        rotate([0,90,0])
+            scale([(high-low)/2,half_width,1])
+                cylinder(r=1,h=0.05,$fn=48);
 }
 
 module reinforced_arm(total_depth) {
@@ -187,9 +202,13 @@ module reinforced_arm(total_depth) {
     }
     hull() {
         arm_shoulder();
-        translate([25.3,-9.6,pivot.z+0.8])
-            axial_cylinder(1.4,3.6);
+        lid_root_section(1);
     }
+    for (i = [0:15])
+        hull() {
+            lid_root_section(i/16);
+            lid_root_section((i+1)/16);
+        }
 }
 
 module lid_closed() {

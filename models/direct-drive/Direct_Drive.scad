@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V15. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V16. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -97,30 +97,9 @@ module rim() {
     }
 }
 
-// Rounded pads define a continuous tapered web. The high section stays
-// on the lens side of the hub. The rail under the servo stays below its case.
-module web_pad(x, y, z, radius) {
-    translate([x,y,z]) cylinder(r=radius,h=0.25,$fn=48);
-}
-
-module ring_gusset() {
-    difference() {
-        hull() {
-            for (angle = [-25,-10,0]) {
-                web_pad(27.1*cos(angle),27.1*sin(angle),0.28,2.05);
-                web_pad(26.8*cos(angle),26.8*sin(angle),5.85,0.70);
-            }
-            web_pad(29.5,mount_face_y+0.5,0.28,2.25);
-            web_pad(29.5,mount_face_y+0.5,5.85,1.15);
-        }
-        // Maintain the full aperture even where the arc pads meet.
-        translate([0,0,0.15]) cylinder(r=rim_inner_radius,h=6.1);
-    }
-}
-
 // The outer envelope eases continuously into the ring. Match the radius
 // of its actual polygon at the join so the ramp ends at zero radial slope.
-module ring_gusset_blend() {
+module ring_to_cradle() {
     start_angle = -87;
     end_angle = 69;
     segments = end_angle-start_angle;
@@ -135,7 +114,12 @@ module ring_gusset_blend() {
         let(angle = start_angle+a,
             t = min(1,(angle-start_angle)/61,(end_angle-angle)/68),
             h = z/(levels-1),
-            excess = 1.94*smooth(t)*(1-smooth(h)),
+            height = start_z+(rim_height-start_z)*h,
+            // The extension grows out of the same radial surface as the ring.
+            // The narrow lobe reaches the near servo foot at its lower end.
+            lobe_t = max(0,min(1,(angle+63)/29,(-13-angle)/21)),
+            lobe = 7.55*smooth(lobe_t)*(1-smooth(min(1,height/5))),
+            excess = 1.94*smooth(t)*(1-smooth(h))+lobe,
             radius = wall == 0 ? 26.65 : rim_radius_at(angle)+excess)
         [radius*cos(angle),radius*sin(angle),start_z+(rim_height-start_z)*h]];
     faces = [
@@ -240,8 +224,7 @@ module mount() {
     foot_y = mount_face_y + mount_plate_thickness - 3.15 - 0.2;
     difference() {
         union() {
-            ring_gusset();
-            ring_gusset_blend();
+            ring_to_cradle();
             triangular_brace(hole_xs[0],hole_xs[1]);
             upper_bridge(hole_xs);
 

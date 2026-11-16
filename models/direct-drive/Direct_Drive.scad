@@ -1,7 +1,8 @@
-// Canon RF 35 mm direct drive cap, V35. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V36. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
-// Choose assembly, sweep, base, or cap. F6 renders the chosen part.
-part = "cap";
+// Choose assembly, sweep, base, cap, cap_b, or assembly_b.
+// cap is the direct screw version. cap_b clips onto the stock horn.
+part = "cap_b";
 open_angle = 110;
 display_angle = 38.5;   
 
@@ -481,6 +482,92 @@ module lid_closed() {
     }
 }
 
+// Option B. The measured horn seats at the same axle position as option A.
+horn_length = 19.87;
+horn_hub_diameter = 7.21;
+horn_blade_thickness = 1.86;
+horn_blade_clock = 20;
+// Widths are scaled estimates from the photos and can be adjusted after fitting.
+horn_blade_root_width = 5.55;
+horn_blade_tip_width = 3.60;
+horn_side_clearance = 0.20;
+horn_axial_clearance = 0.20;
+horn_snap_engagement = 0.18;
+horn_tip_center = horn_length-horn_hub_diameter/2-horn_blade_tip_width/2;
+horn_blade_bottom = stock_horn_total_thickness-horn_blade_thickness;
+
+module horn_coordinates() {
+    c=cos(horn_blade_clock);
+    s=sin(horn_blade_clock);
+    multmatrix([[-c,s,0,pivot.x],[0,0,1,pivot.y],
+                [s,c,0,pivot.z],[0,0,0,1]]) children();
+}
+
+module horn_blade_outline(extra=0) {
+    hull() {
+        translate([2.65,0]) circle(r=horn_blade_root_width/2+extra,$fn=72);
+        translate([horn_tip_center,0]) circle(r=horn_blade_tip_width/2+extra,$fn=72);
+    }
+}
+
+module horn_carrier() {
+    lip_start = horn_blade_bottom-0.40;
+    roof_bottom = stock_horn_total_thickness+horn_axial_clearance;
+    roof_top = roof_bottom+1.35;
+    difference() {
+        union() {
+            horn_coordinates()
+                translate([0,0,lip_start])
+                    linear_extrude(height=roof_top-lip_start)
+                        hull() {
+                            translate([6,0]) circle(r=3.90,$fn=72);
+                            translate([horn_tip_center,0]) circle(r=2.95,$fn=72);
+                        }
+            // A tapered bridge ties the receiver roof into the disk.
+            hull() {
+                horn_coordinates()
+                    translate([12.7,0,roof_bottom+0.15])
+                        cylinder(r=1.9,h=1.05,$fn=72);
+                translate([22.0,-9.1,pivot.z+0.12])
+                    cylinder(r=2.2,h=1.0,$fn=72);
+            }
+        }
+        horn_coordinates() {
+            // Leave the stock horn hub and its retained screw accessible.
+            translate([0,0,horn_blade_bottom-0.60])
+                cylinder(r=horn_hub_diameter/2+horn_side_clearance,h=8,$fn=96);
+            translate([0,0,horn_blade_bottom-horn_axial_clearance])
+                linear_extrude(height=horn_blade_thickness+2*horn_axial_clearance)
+                    horn_blade_outline(horn_side_clearance);
+            // Open the mouth with relieved sides, leaving two short snap lips.
+            for (side=[-1,1])
+                scale([1,side,1]) {
+                    translate([0,0,lip_start-0.10])
+                        linear_extrude(height=horn_blade_bottom-lip_start+0.12)
+                            intersection() {
+                                horn_blade_outline(horn_side_clearance);
+                                square([20,6]);
+                                polygon([[0,0],[20,0],[20,4],
+                                    [14.9,4],[14.9,1.84-horn_snap_engagement],
+                                    [12.4,2.05-horn_snap_engagement],[12.4,4],[0,4]]);
+                            }
+                }
+        }
+    }
+}
+
+module lid_horn_closed() {
+    union() {
+        translate([0,0,pivot.z]) cylinder(r=lid_radius,h=lid_thickness);
+        lid_light_lip();
+        horn_carrier();
+    }
+}
+
+module lid_horn(angle) {
+    translate(pivot) rotate([0,angle,0]) translate(-pivot) lid_horn_closed();
+}
+
 module lid(angle) {
     translate(pivot) rotate([0,angle,0]) translate(-pivot) lid_closed();
 }
@@ -498,6 +585,12 @@ module servo_envelope() {
 
 if (part == "base") base();
 if (part == "cap") lid_closed();
+if (part == "cap_b") lid_horn_closed();
+if (part == "assembly_b") {
+    color("#395d74") base();
+    color("#555a63") servo_envelope();
+    color("#c67330") lid_horn(display_angle);
+}
 if (part == "assembly" || part == "sweep") {
     color("#395d74") base();
     color("#555a63") servo_envelope();

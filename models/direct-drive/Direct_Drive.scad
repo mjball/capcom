@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V32. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V33. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "cap";
@@ -44,7 +44,7 @@ ring_radius = 27.7;
 rim_height = 6.75;
 rim_inner_radius = 25.7;
 lid_radius = 28.2;
-lid_thickness = 1.6;
+lid_thickness = 1.25;
 pivot = [38, -14, 8];
 mount_face_y = pivot.y - (installed_horn_top_from_rear
     - stock_horn_total_thickness-servo_body_depth);
@@ -416,7 +416,9 @@ module lid_root_section(t) {
     y = -7.0 - 2.6*eased;
     half_width = 4.5 - 1.8*eased;
     low = pivot.z + 0.02 - 0.47*eased;
-    high = pivot.z + lid_thickness - 0.02 + 1.62*eased;
+    // Taper from the thinner lid to the original arm shoulder height.
+    plate_top = lid_thickness-0.02;
+    high = pivot.z+plate_top+(3.20-plate_top)*eased;
     translate([x-0.025,y,(low+high)/2])
         rotate([0,90,0])
             scale([(high-low)/2,half_width,1])

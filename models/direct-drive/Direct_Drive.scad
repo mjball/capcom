@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V14. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V15. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -106,11 +106,11 @@ module web_pad(x, y, z, radius) {
 module ring_gusset() {
     difference() {
         hull() {
-            for (angle = [-40,-25,-10,5,16]) {
-                web_pad(27.1*cos(angle),27.1*sin(angle),0.25,2.35);
-                web_pad(26.8*cos(angle),26.8*sin(angle),5.85,1.15);
+            for (angle = [-25,-10,0]) {
+                web_pad(27.1*cos(angle),27.1*sin(angle),0.28,2.05);
+                web_pad(26.8*cos(angle),26.8*sin(angle),5.85,0.70);
             }
-            web_pad(29.5,mount_face_y+0.5,0.25,2.25);
+            web_pad(29.5,mount_face_y+0.5,0.28,2.25);
             web_pad(29.5,mount_face_y+0.5,5.85,1.15);
         }
         // Maintain the full aperture even where the arc pads meet.
@@ -118,25 +118,26 @@ module ring_gusset() {
     }
 }
 
-// Feather the gusset into the outside of the ring. Both ends finish
-// inside the existing ring surface, so there is no exposed end face.
+// The outer envelope eases continuously into the ring. Match the radius
+// of its actual polygon at the join so the ramp ends at zero radial slope.
 module ring_gusset_blend() {
-    segments = 72;
-    start_angle = -59;
-    end_angle = 35;
-    ramp_angle = 15;
-    // Z, then added radius. The upper edge also finishes inside the ring.
-    profile = [[0.01,1.94],[0.55,1.94],[2,1.62],[4,1.03],
-               [5.85,0.45],[6.22,0.27],[6.52,0.09],[6.75,0]];
-    levels = len(profile);
+    start_angle = -87;
+    end_angle = 69;
+    segments = end_angle-start_angle;
+    levels = 21;
+    start_z = 0.04;
     function index(a,z,wall) = 2*(a*levels+z)+wall;
     function quad(a,b,c,d) = [[a,c,b],[a,d,c]];
+    function smooth(t) = t*t*t*(10+t*(-15+6*t));
+    function rim_radius_at(a) =
+        ring_radius*cos(1.5)/cos(a-3*floor(a/3)-1.5);
     points = [for (a = [0:segments], z = [0:levels-1], wall = [0:1])
-        let(angle = start_angle+(end_angle-start_angle)*a/segments,
-            t = min(1,(angle-start_angle)/ramp_angle,(end_angle-angle)/ramp_angle),
-            eased = t*t*(3-2*t),
-            radius = wall == 0 ? 26.65 : ring_radius-0.04+profile[z].y*eased)
-        [radius*cos(angle),radius*sin(angle),profile[z].x]];
+        let(angle = start_angle+a,
+            t = min(1,(angle-start_angle)/61,(end_angle-angle)/68),
+            h = z/(levels-1),
+            excess = 1.94*smooth(t)*(1-smooth(h)),
+            radius = wall == 0 ? 26.65 : rim_radius_at(angle)+excess)
+        [radius*cos(angle),radius*sin(angle),start_z+(rim_height-start_z)*h]];
     faces = [
         for (a = [0:segments-1], z = [0:levels-2]) each concat(
             quad(index(a,z,1),index(a+1,z,1),index(a+1,z+1,1),index(a,z+1,1)),
@@ -156,7 +157,7 @@ module ring_gusset_blend() {
 module rounded_mount_ear(x) {
     hull() {
         for (dx = [-1.55,1.55])
-            translate([x+dx,mount_face_y,1.25])
+            translate([x+dx,mount_face_y,1.37])
                 axial_cylinder(1.05,mount_plate_thickness);
         translate([x,mount_face_y,mount_hole_z])
             axial_cylinder(2.65,mount_plate_thickness);
@@ -194,8 +195,9 @@ module cradle_spine(x) {
 
 // A shallow diaphragm ties the far servo ear back to the ring.
 module triangular_brace(near_x, far_x) {
-    floor = 0.25;
+    floor = 0.29;
     lip = 0.20;
+    top = 0.25+brace_thickness;
     corner_r = 0.75;
     // Keep the entire brace on the shaft side of the servo seating plane.
     rail_y = mount_face_y + corner_r + 0.12;
@@ -203,8 +205,8 @@ module triangular_brace(near_x, far_x) {
     hull() {
         for (corner = corners) {
             translate([corner.x,corner.y,floor])
-                cylinder(r=corner_r,h=brace_thickness-lip,$fn=48);
-            translate([corner.x,corner.y,floor+brace_thickness-lip])
+                cylinder(r=corner_r,h=top-floor-lip,$fn=48);
+            translate([corner.x,corner.y,top-lip])
                 cylinder(r1=corner_r,r2=0.50,h=lip,$fn=48);
         }
     }

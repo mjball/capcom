@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V22. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V23. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -115,17 +115,11 @@ module ring_to_cradle() {
     function smooth(t) = t*t*t*(10+t*(-15+6*t));
     function rim_radius_at(a) =
         ring_radius*cos(1.5)/cos(a-3*floor(a/3)-1.5);
-    // Blend the outer wall directly into the straight rail boundary.
-    // The rounded max keeps the slope continuous across the old cutting edge.
-    function rail_runout(x) =
-        cradle_straight_edge_y-3.6*(1-smooth(max(0,min(1,(x-12)/8))));
-    function rounded_max(a,b,width) =
-        max(a,b)+pow(max(0,width-abs(a-b)),2)/(4*width);
-    points = [for (a = [0:segments], z = [0:levels-1], wall = [0:1])
-        let(angle = start_angle+a/2,
+    function clamp01(x) = max(0,min(1,x));
+    function outer_radius(angle,height) =
+        let(
             t = min(1,(angle-start_angle)/61,(end_angle-angle)/68),
-            h = z/(levels-1),
-            height = start_z+(rim_height-start_z)*h,
+            h = (height-start_z)/(rim_height-start_z),
             // The extension grows out of the same radial surface as the ring.
             // The narrow lobe reaches the near servo foot at its lower end.
             lobe_t = max(0,min(1,(angle+63)/29,(-13-angle)/21)),
@@ -144,11 +138,42 @@ module ring_to_cradle() {
             shoulder_limit = max(0,32.12/max(0.01,cos(angle))-wall_radius),
             // Ease into the arm clearance envelope without a clipped flat.
             deck_fillet = shoulder_limit > 0
-                ? shoulder_limit*(1-exp(-raw_fillet/shoulder_limit)) : 0,
-            radius = wall == 0 ? 26.65 : wall_radius+deck_fillet,
+                ? shoulder_limit*(1-exp(-raw_fillet/shoulder_limit)) : 0)
+        wall_radius+deck_fillet;
+    function angle_at_x(x,z,lo=-87,hi=-45,remaining=16) =
+        let(a=(lo+hi)/2)
+        remaining == 0 ? a :
+            (outer_radius(a,z)*cos(a) < x
+                ? angle_at_x(x,z,a,hi,remaining-1)
+                : angle_at_x(x,z,lo,a,remaining-1));
+    function outer_y_at_x(x,z) =
+        let(a=angle_at_x(x,z)) outer_radius(a,z)*sin(a);
+    function rounded_max(a,b,width) =
+        max(a,b)+pow(max(0,width-abs(a-b)),2)/(4*width);
+    function old_runout(x) =
+        cradle_straight_edge_y-3.6*(1-smooth(clamp01((x-12)/8)));
+    // A single Hermite curve connects the ring to the rail at the floor.
+    // The slope matches the ring at X=12 and reaches zero at X=18.
+    function rail_curve(x,y,entry,slope) =
+        let(t=clamp01((x-12)/6), rise=cradle_straight_edge_y-entry,
+            m=max(0,min(slope,3*rise/6)), t2=t*t, t3=t2*t)
+        x <= 12 || rise <= 0 ? y :
+            x >= 18 ? max(y,cradle_straight_edge_y) :
+            entry+(3*t2-2*t3)*rise+6*m*(t3-2*t2+t);
+    entries = [for (z = [0:levels-1])
+        let(height=start_z+(rim_height-start_z)*z/(levels-1))
+        [outer_y_at_x(12,height),
+         (outer_y_at_x(12.05,height)-outer_y_at_x(11.95,height))/0.1]];
+    points = [for (a = [0:segments], z = [0:levels-1], wall = [0:1])
+        let(angle = start_angle+a/2,
+            height = start_z+(rim_height-start_z)*z/(levels-1),
+            radius = wall == 0 ? 26.65 : outer_radius(angle,height),
             x = radius*cos(angle),
             y = radius*sin(angle),
-            outside_y = wall == 0 ? y : rounded_max(y,rail_runout(x),0.90))
+            blend = 1-smooth(clamp01((height-cradle_floor_top)/1.75)),
+            old_y = rounded_max(y,old_runout(x),0.90),
+            new_y = rail_curve(x,y,entries[z].x,entries[z].y),
+            outside_y = wall == 0 || angle >= 0 ? y : old_y+(new_y-old_y)*blend)
         [x,outside_y,height]];
     faces = [
         for (a = [0:segments-1], z = [0:levels-2]) each concat(

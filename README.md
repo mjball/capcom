@@ -1,6 +1,6 @@
 # Capcom
 
-A desk-controlled motorized privacy cap for the Canon RF 35 mm F1.8 Macro IS STM, using its 52 mm filter thread.
+A desk-controlled motorized lens cap for the Canon RF 35 mm F1.8 Macro IS STM, using its 52 mm filter thread.
 
 The direct drive OpenSCAD model lives at [models/direct-drive/Direct_Drive.scad](models/direct-drive/Direct_Drive.scad). Its Git history contains the draft and V2 through V7. See [hardware and controls](docs/hardware.md) for the DigiKey parts list.
 

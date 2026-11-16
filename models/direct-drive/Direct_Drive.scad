@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V23. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V24. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -152,13 +152,17 @@ module ring_to_cradle() {
         max(a,b)+pow(max(0,width-abs(a-b)),2)/(4*width);
     function old_runout(x) =
         cradle_straight_edge_y-3.6*(1-smooth(clamp01((x-12)/8)));
-    // A single Hermite curve connects the ring to the rail at the floor.
-    // The slope matches the ring at X=12 and reaches zero at X=18.
+    // The Hermite curve reaches the rail at X=18 with zero slope.
+    // At higher slices the raw wall can sit inward of the rail there.
+    // Ease back to that wall over 4 mm so the two branches still join flush.
     function rail_curve(x,y,entry,slope) =
         let(t=clamp01((x-12)/6), rise=cradle_straight_edge_y-entry,
-            m=max(0,min(slope,3*rise/6)), t2=t*t, t3=t2*t)
+            m=max(0,min(slope,3*rise/6)), t2=t*t, t3=t2*t,
+            release=smooth(clamp01((x-18)/4)),
+            return_y=rounded_max(y,cradle_straight_edge_y,0.20))
         x <= 12 || rise <= 0 ? y :
-            x >= 18 ? max(y,cradle_straight_edge_y) :
+            x >= 18 ? cradle_straight_edge_y
+                + release*(return_y-cradle_straight_edge_y) :
             entry+(3*t2-2*t3)*rise+6*m*(t3-2*t2+t);
     entries = [for (z = [0:levels-1])
         let(height=start_z+(rim_height-start_z)*z/(levels-1))

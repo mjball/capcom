@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V30. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V31. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -210,6 +210,15 @@ module rounded_mount_ear(x) {
 
 // Close the mounting frame above the servo housing, in the ear plane.
 module upper_bridge(hole_xs) {
+    nose_left = pivot.x-shaft_from_body_end-rectangular_nose_clearance;
+    nose_right = nose_left+servo_body_length+2*rectangular_nose_clearance;
+
+    // Fill the tapered interior out to the edges of the rectangular opening.
+    translate([hole_xs[0],mount_face_y,mount_hole_z])
+        cube([nose_left-hole_xs[0],mount_plate_thickness,upper_bridge_z-mount_hole_z]);
+    translate([nose_right,mount_face_y,mount_hole_z])
+        cube([hole_xs[1]-nose_right,mount_plate_thickness,upper_bridge_z-mount_hole_z]);
+
     hull() {
         for (x = hole_xs)
             translate([x,mount_face_y,upper_bridge_z])

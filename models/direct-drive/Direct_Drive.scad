@@ -1,8 +1,8 @@
-// Canon RF 35 mm direct drive cap, V40. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V41. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, cap, cap_b, or assembly_b.
 // cap is the direct screw version. cap_b clips onto the stock horn.
-part = "cap_b";
+part = "assembly_b";
 open_angle = 110;
 display_angle = 38.5;   
 
@@ -510,59 +510,35 @@ module horn_blade_outline(extra=0) {
     }
 }
 
-// Offset the entire footprint so the fillet wraps around the rounded
-// end and both faces of the clip. Bury the final section in the clip.
+// One loft meets the rounded nose of the clip across its entire width.
 module horn_root_section(angle) {
-    flare = 1.55*(1-sin(angle));
-    z = pivot.z+lid_thickness-0.025+2.70*(1-cos(angle));
+    nose_radius = 2.95;
+    nose_x = pivot.x-horn_tip_center*cos(horn_blade_clock)-nose_radius;
+    nose_z = pivot.z+horn_tip_center*sin(horn_blade_clock);
+    lid_top = pivot.z+lid_thickness;
     mouth_y = pivot.y+horn_blade_bottom-0.40;
     back_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance+1.35;
+    flare = 1-sin(angle);
+    end_x = nose_x+0.045-4.6*flare;
+    corner = 0.045+0.85*flare;
+    z = lid_top-0.025+(nose_z-lid_top+0.025)*(1-cos(angle));
 
     translate([0,0,z])
         linear_extrude(height=0.01)
-            offset(r=flare+0.14,$fn=72)
-                translate([22.1,mouth_y+0.15])
-                    square([2.15,back_y-mouth_y-0.30]);
-}
-
-// The web rises toward the closed end of the clip and widens at the lid.
-module horn_web_section(t) {
-    x = 16.9+7.0*t;
-    roof_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance;
-    bottom = pivot.z+lid_thickness-0.10;
-    rise = 4.9*t*t*(3-2*t);
-    half_width = 0.35+0.27*t+0.37*sin(180*t);
-
-    translate([x-0.015,roof_y+0.64,bottom])
-        rotate([0,90,0])
-            scale([0.07+rise,half_width,1]) cylinder(r=1,h=0.03,$fn=72);
-}
-
-module horn_web() {
-    steps = 24;
-    intersection() {
-        translate([0,-20,pivot.z+lid_thickness-0.11])
-            cube([30,20,10]);
-        union()
-            for (step=[0:steps-1])
-                hull() {
-                    horn_web_section(step/steps);
-                    horn_web_section((step+1)/steps);
-                }
-    }
+            offset(r=corner,$fn=72)
+                translate([end_x+corner,mouth_y+0.055])
+                    square([24.60-end_x-corner,back_y-mouth_y-0.11]);
 }
 
 module horn_root_fillet() {
     difference() {
-        union() {
-            horn_web();
-            for (angle=[0:3:87])
+        union()
+            for (angle=[0:2:88])
                 hull() {
                     horn_root_section(angle);
-                    horn_root_section(angle+3);
+                    horn_root_section(angle+2);
                 }
-        }
-        // Keep the added material out of the blade's straight insertion path.
+        // Preserve the stock horn's insertion path through the open face.
         horn_coordinates()
             translate([0,0,-6])
                 linear_extrude(height=6+stock_horn_total_thickness+horn_axial_clearance)

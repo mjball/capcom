@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V37. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V38. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, cap, cap_b, or assembly_b.
 // cap is the direct screw version. cap_b clips onto the stock horn.
@@ -510,26 +510,29 @@ module horn_blade_outline(extra=0) {
     }
 }
 
-// Rounded sections follow a quarter ellipse from the lid into the clip roof.
-module horn_bridge_section(angle) {
-    z = pivot.z+lid_thickness-0.04+3.70*(1-cos(angle));
-    inner_x = 19.0+4.55*sin(angle);
-    center_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance
-        +1.65-0.95*sin(angle);
-    half_width = 1.65-0.95*sin(angle);
-    translate([0,center_y,z])
-        linear_extrude(height=0.02)
+// Flare the roof's rounded tip into the lid. The uppermost section
+// sits entirely inside the clip roof and the horn insertion face stays open.
+module horn_root_section(angle) {
+    flare = 1-sin(angle);
+    roof_y = pivot.y+stock_horn_total_thickness+horn_axial_clearance;
+    half_width = 0.62+0.72*flare;
+    z = pivot.z+lid_thickness-0.025+2.20*(1-cos(angle));
+
+    translate([0,roof_y+0.11+half_width,z])
+        linear_extrude(height=0.01)
             hull() {
-                translate([inner_x,0]) scale([1.0,half_width]) circle(r=1,$fn=72);
-                translate([24.35,0]) scale([1.0,half_width]) circle(r=1,$fn=72);
+                translate([23.40-1.90*flare,0])
+                    scale([0.80,half_width]) circle(r=1,$fn=72);
+                translate([24.65+0.60*flare,0])
+                    scale([0.80,half_width]) circle(r=1,$fn=72);
             }
 }
 
-module horn_bridge() {
-    for (angle=[0:5:85])
+module horn_root_fillet() {
+    for (angle=[0:3:87])
         hull() {
-            horn_bridge_section(angle);
-            horn_bridge_section(angle+5);
+            horn_root_section(angle);
+            horn_root_section(angle+3);
         }
 }
 
@@ -546,7 +549,7 @@ module horn_carrier() {
                             translate([6,0]) circle(r=3.90,$fn=72);
                             translate([horn_tip_center,0]) circle(r=2.95,$fn=72);
                         }
-            horn_bridge();
+            horn_root_fillet();
         }
         horn_coordinates() {
             // Leave the stock horn hub and its retained screw accessible.

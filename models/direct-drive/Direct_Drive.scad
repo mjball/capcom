@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V7. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V8. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -50,6 +50,10 @@ mount_plate_thickness = 1.9;
 
 hub_radius = 4.8;
 brace_thickness = 2.0;
+upper_bridge_radius = 1.30;
+upper_bridge_air_gap = 0.51;
+upper_bridge_z = pivot.z + housing_shoulder_diameter/2
+    + 0.35 + upper_bridge_air_gap + upper_bridge_radius;
 
 // Original lens-facing geometry is at z <= 0 after this rigid transform.
 module original_interface() {
@@ -58,7 +62,8 @@ module original_interface() {
             translate([-39.28856, -29.816093, -27.976998])
                 original_base_mesh();
         // One full-depth trim removes the hinge and latch, including the
-        // slivers at their roots. The thread crests fit within r = 26.21.
+        // slivers at their roots. Keep the original thread gap until the
+        // mating thread across the gap can be verified.
         translate([0,0,-3]) cylinder(r=27.72,h=6.5,$fn=360);
     }
 }
@@ -103,6 +108,22 @@ module rounded_mount_ear(x) {
         translate([x,mount_face_y,mount_hole_z])
             axial_cylinder(2.65,mount_plate_thickness);
     }
+}
+
+// Close the mounting frame above the servo housing, in the ear plane.
+module upper_bridge(hole_xs) {
+    hull() {
+        for (x = hole_xs)
+            translate([x,mount_face_y,upper_bridge_z])
+                axial_cylinder(upper_bridge_radius,mount_plate_thickness);
+    }
+    for (x = hole_xs)
+        hull() {
+            translate([x,mount_face_y,mount_hole_z])
+                axial_cylinder(2.65,mount_plate_thickness);
+            translate([x,mount_face_y,upper_bridge_z])
+                axial_cylinder(upper_bridge_radius,mount_plate_thickness);
+        }
 }
 
 module cradle_foot(x, y) {
@@ -156,6 +177,7 @@ module mount() {
         union() {
             ring_gusset();
             triangular_brace(hole_xs[0],hole_xs[1]);
+            upper_bridge(hole_xs);
 
             // Keep the wide footing beneath the case. The retained spine
             // rises only on the shaft side of the servo mounting plane.

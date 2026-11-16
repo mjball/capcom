@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V16. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V17. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -55,6 +55,8 @@ mount_plate_thickness = 1.9;
 hub_radius = 4.8;
 brace_thickness = 2.0;
 cradle_floor_top = 1.65;
+mount_underside_z = 0; // Same datum as the lens seating shoulder.
+mount_underside_stock = mount_underside_z-0.10;
 upper_bridge_radius = 1.30;
 upper_bridge_air_gap = 0.51;
 upper_bridge_z = pivot.z + housing_shoulder_diameter/2
@@ -104,7 +106,7 @@ module ring_to_cradle() {
     end_angle = 69;
     segments = end_angle-start_angle;
     levels = 21;
-    start_z = 0.04;
+    start_z = mount_underside_stock;
     function index(a,z,wall) = 2*(a*levels+z)+wall;
     function quad(a,b,c,d) = [[a,c,b],[a,d,c]];
     function smooth(t) = t*t*t*(10+t*(-15+6*t));
@@ -118,7 +120,7 @@ module ring_to_cradle() {
             // The extension grows out of the same radial surface as the ring.
             // The narrow lobe reaches the near servo foot at its lower end.
             lobe_t = max(0,min(1,(angle+63)/29,(-13-angle)/21)),
-            lobe = 7.55*smooth(lobe_t)*(1-smooth(min(1,height/5))),
+            lobe = 7.55*smooth(lobe_t)*(1-smooth(max(0,min(1,height/5)))),
             excess = 1.94*smooth(t)*(1-smooth(h))+lobe,
             radius = wall == 0 ? 26.65 : rim_radius_at(angle)+excess)
         [radius*cos(angle),radius*sin(angle),start_z+(rim_height-start_z)*h]];
@@ -165,7 +167,8 @@ module upper_bridge(hole_xs) {
 }
 
 module cradle_foot(x, y) {
-    translate([x,y,0.25]) cylinder(r=3.15,h=cradle_floor_top-0.25,$fn=72);
+    translate([x,y,mount_underside_stock])
+        cylinder(r=3.15,h=cradle_floor_top-mount_underside_stock,$fn=72);
 }
 
 module cradle_spine(x) {
@@ -179,7 +182,7 @@ module cradle_spine(x) {
 
 // A shallow diaphragm ties the far servo ear back to the ring.
 module triangular_brace(near_x, far_x) {
-    floor = 0.29;
+    floor = mount_underside_stock;
     lip = 0.20;
     top = 0.25+brace_thickness;
     corner_r = 0.75;
@@ -233,8 +236,9 @@ module mount() {
             hull() {
                 for (x = hole_xs) {
                     cradle_foot(x,foot_y);
-                    translate([x,mount_face_y+mount_plate_thickness/2,0.25])
-                        cylinder(r=0.85,h=cradle_floor_top-0.25,$fn=48);
+                    translate([x,mount_face_y+mount_plate_thickness/2,
+                               mount_underside_stock])
+                        cylinder(r=0.85,h=cradle_floor_top-mount_underside_stock,$fn=48);
                 }
             }
             hull() {
@@ -252,6 +256,9 @@ module mount() {
                 }
             }
         }
+        // Trim the united footing and transition to one plane. The
+        // lens thread mesh is a separate solid and is outside this cut.
+        translate([-100,-100,mount_underside_z-100]) cube([200,200,100]);
         servo_rectangular_nose(rectangular_nose_clearance);
         servo_front_housing(0.35);
         // Keep the tab seating plane clear on its servo side. Only the
@@ -259,7 +266,7 @@ module mount() {
         translate([-100,mount_face_y-100,cradle_floor_top])
             cube([200,100,100]);
         // The flared footing can touch the bore when the tab spacing changes.
-        translate([0,0,0.15]) cylinder(r=rim_inner_radius,h=11);
+        translate([0,0,mount_underside_stock-0.05]) cylinder(r=rim_inner_radius,h=11);
         for (x = hole_xs)
             translate([x,mount_face_y-0.25,mount_hole_z])
                 axial_cylinder(mount_hole_diameter/2,mount_plate_thickness+0.5);

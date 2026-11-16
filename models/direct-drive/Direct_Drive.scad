@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V20. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V21. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -224,6 +224,24 @@ module straight_edge_trim() {
                 [for (i=[len(runout)-1:-1:0]) runout[i]]));
 }
 
+// Preserve the flat tab relief at the ears but roll it away from the
+// ring. The old full-width cut intersected the ring at X ~19.58.
+module rear_tab_relief() {
+    runout_start = 20;
+    runout_end = 26.1;
+    runout_depth = 10;
+    steps = 48;
+    curve = [for (i = [0:steps])
+        let(t = i/steps, eased = t*t*t*(10+t*(-15+6*t)))
+        [runout_start+(runout_end-runout_start)*t,
+         mount_face_y-runout_depth*(1-eased)]];
+    translate([0,0,cradle_floor_top])
+        linear_extrude(height=100)
+            polygon(concat([[-100,-120],[100,-120],[100,mount_face_y]],
+                [for (i = [steps:-1:0]) curve[i]],
+                [[-100,mount_face_y-runout_depth]]));
+}
+
 module cradle_spine(x) {
     hull() {
         translate([x,mount_face_y,1.84])
@@ -305,10 +323,7 @@ module mount() {
         straight_edge_trim();
         servo_rectangular_nose(rectangular_nose_clearance);
         servo_front_housing(0.35);
-        // Keep the tab seating plane clear on its servo side. Only the
-        // low footing can extend behind it, beneath the case and tabs.
-        translate([-100,mount_face_y-100,cradle_floor_top])
-            cube([200,100,100]);
+        rear_tab_relief();
         // The flared footing can touch the bore when the tab spacing changes.
         translate([0,0,mount_underside_stock-0.05]) cylinder(r=rim_inner_radius,h=11);
         for (x = hole_xs)

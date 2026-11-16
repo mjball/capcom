@@ -1,4 +1,4 @@
-// Canon RF 35 mm direct drive cap, V24. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V25. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
 part = "assembly";
@@ -220,6 +220,17 @@ module upper_bridge(hole_xs) {
         }
 }
 
+// One rounded end replaces the intersecting rail and ear outlines.
+module far_footing_end(x) {
+    end_radius = 1.20;
+    end_x = x+cradle_rail_radius;
+    front_y = mount_face_y+mount_plate_thickness+0.70;
+    hull()
+        for (cx = [x-1.25,end_x-end_radius],
+             cy = [cradle_straight_edge_y+end_radius,front_y-end_radius])
+            translate([cx,cy]) circle(r=end_radius,$fn=120);
+}
+
 // Build the low footing from one outline. Round inward corners in plan
 // before extruding it so the ring transition and the foot have one edge.
 module integrated_footing(hole_xs) {
@@ -229,17 +240,18 @@ module integrated_footing(hole_xs) {
             offset(r=-corner_radius,$fn=120)
                 offset(r=corner_radius,$fn=120)
                     union() {
-                        hull()
-                            for (x = concat([18],hole_xs))
+                        hull() {
+                            for (x = [18,hole_xs[0]])
                                 translate([x,cradle_rail_y])
                                     circle(r=cradle_rail_radius,$fn=120);
+                            far_footing_end(hole_xs[1]);
+                        }
 
-                        // The full ear root is buried in these radiused ends.
-                        for (x = hole_xs)
-                            hull()
-                                for (dx = [-2.20,2.20],
-                                     y = [mount_face_y,mount_face_y+mount_plate_thickness])
-                                    translate([x+dx,y]) circle(r=0.70,$fn=72);
+                        // Cover the near ear root where it meets the ring.
+                        hull()
+                            for (dx = [-2.20,2.20],
+                                 y = [mount_face_y,mount_face_y+mount_plate_thickness])
+                                translate([hole_xs[0]+dx,y]) circle(r=0.70,$fn=72);
 
                         // Merge only the local ring section on the footing
                         // side, leaving the far side of the ring untouched.

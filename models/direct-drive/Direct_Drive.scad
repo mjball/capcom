@@ -1,9 +1,9 @@
-// Canon RF 35 mm direct drive cap, V31. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V32. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, or cap. F6 renders the chosen part.
-part = "assembly";
-open_angle = 135;
-display_angle = 0;
+part = "cap";
+open_angle = 110;
+display_angle = 38.5;   
 
 // Measured SER0049 and stock horn dimensions, all in mm.
 servo_body_length = 22.78;
@@ -452,8 +452,10 @@ module lid_closed() {
             axial_cylinder(shaft_recess_diameter/2,shaft_recess_depth+0.10);
         translate(pivot+[0,-0.10,0])
             axial_cylinder(screw_clearance_diameter/2,total_depth+0.20);
+        // Extend the tool access past the reinforced arm. The start of
+        // this cut is the flat bearing surface for the stock screw head.
         translate(pivot+[0,shaft_recess_depth+screw_seat_thickness,0])
-            axial_cylinder(screw_head_recess_diameter/2,screw_head_recess_depth+0.10);
+            axial_cylinder(screw_head_recess_diameter/2,2*lid_radius);
     }
 }
 

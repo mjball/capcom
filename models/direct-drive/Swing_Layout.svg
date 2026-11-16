@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+<rect width="960" height="640" rx="14" fill="#f7f6f0"/>
+<g font-family="system-ui, sans-serif" fill="#243641">
+<text x="32" y="45" font-size="26" font-weight="700">52 mm lens cap · direct drive</text>
+<text x="32" y="72" font-size="15">Section through optical axis · cap sweep</text>
+<text x="32" y="601" font-size="15">The servo body sits out of section. Its shaft projects into the marked pivot.</text>
+<text x="32" y="625" font-size="15">Blue shows the nominal base rim section. Thread details are in the CAD model.</text>
+<line x1="820" x2="880" y1="542" y2="542" stroke="#243641" stroke-width="2"/>
+<text x="825" y="565" font-size="14">10 mm</text>
+<circle cx="548" cy="487" r="5"/><text x="555" y="512" font-size="15">Servo shaft axis</text>
+<polyline points="153.80,535.00 153.80,494.50 165.80,494.50 165.80,535.00 153.80,535.00" fill="none" stroke="#355d74" stroke-width="3" stroke-linejoin="round" opacity="1"/>
+<polyline points="474.20,535.00 474.20,494.50 486.20,494.50 486.20,535.00 474.20,535.00" fill="none" stroke="#355d74" stroke-width="3" stroke-linejoin="round" opacity="1"/>
+<polyline points="150.80,487.00 489.20,487.00 489.20,477.40 150.80,477.40 150.80,487.00" fill="none" stroke="#a84f20" stroke-width="3" stroke-linejoin="round" opacity="1"/>
+<text x="157.80" y="511.00" fill="#873d19" font-size="15">0°</text>
+<polyline points="267.14,206.14 506.42,445.42 513.21,438.63 273.93,199.35 267.14,206.14" fill="none" stroke="#a84f20" stroke-width="3" stroke-linejoin="round" opacity="0.48"/>
+<text x="274.14" y="196.14" fill="#873d19" font-size="15">45°</text>
+<polyline points="548.00,89.80 548.00,428.20 557.60,428.20 557.60,89.80 548.00,89.80" fill="none" stroke="#a84f20" stroke-width="3" stroke-linejoin="round" opacity="0.48"/>
+<text x="555.00" y="79.80" fill="#873d19" font-size="15">90°</text>
+<polyline points="828.86,206.14 589.58,445.42 596.37,452.21 835.65,212.93 828.86,206.14" fill="none" stroke="#a84f20" stroke-width="3" stroke-linejoin="round" opacity="1"/>
+<text x="835.86" y="196.14" fill="#873d19" font-size="15">135°</text>
+</g></svg>

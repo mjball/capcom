@@ -1,6 +1,6 @@
 # Shelved four-bar linkage design
 
-> **Status: historical and shelved.** Capcom now uses the direct-drive design in `models/direct-drive/Direct_Drive.scad`. The material here preserves an earlier linkage-based approach and its research; it is not the current fabrication plan.
+> **Status: historical and shelved.** Capcom now uses the versioned direct-drive design in `models/direct-drive/Lens_Cap_Direct_Drive_V42.scad`. The material here preserves an earlier linkage-based approach and its research; it is not the current fabrication plan.
 
 This archive consolidates work recovered from the ChatGPT conversations **DIY Servo Stand Off** and **Linkage Design Software**, the DIY working directory, and surviving temporary preview files. Existing artifacts are retained byte-for-byte wherever possible.
 

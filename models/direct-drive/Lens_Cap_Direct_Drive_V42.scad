@@ -1,15 +1,17 @@
-// Canon RF 35 mm direct drive cap, V41. Dimensions in mm.
+// Canon RF 35 mm direct drive cap, V42. Dimensions in mm.
 // Self-contained model with the original lens interface mesh embedded.
 // Choose assembly, sweep, base, cap, cap_b, or assembly_b.
 // cap is the direct screw version. cap_b clips onto the stock horn.
-part = "assembly_b";
+part = "base";
 open_angle = 110;
 display_angle = 38.5;   
 
 // Measured SER0049 and stock horn dimensions, all in mm.
 servo_body_length = 22.78;
 servo_body_width = 12.06;
-servo_body_depth = 23.38;  // Rear face to tab seating plane.
+// Rear face to the front shoulder of the rectangular case. This is not the
+// tab seating plane: the tabs sit housing_shoulder_from_tabs behind it.
+servo_case_front_from_rear = 23.38;
 servo_tab_thickness = 2.44;
 servo_tab_hole_diameter = 2.00;
 mount_hole_spacing = 27.40;
@@ -19,6 +21,10 @@ mount_hole_z_offset = 0;
 shaft_tip_from_rear = 31.26;
 housing_shoulder_from_tabs = 4.59;
 housing_shoulder_diameter = 11.58;
+// V41 incorrectly used the case shoulder as the seating datum. The tabs'
+// front faces are inset by 4.59 mm, so the fixed mount belongs at 18.79 mm.
+servo_tab_seating_from_rear = servo_case_front_from_rear
+    - housing_shoulder_from_tabs;
 // The rectangular face is forward of the tabs and behind the shoulder.
 // Use the full measured tab-to-shoulder distance as the clearance limit.
 rectangular_nose_keepout_depth = housing_shoulder_from_tabs;
@@ -51,7 +57,7 @@ light_lip_wall = 1.00;
 light_lip_outer_radius = rim_inner_radius-0.50;
 pivot = [38, -14, 8];
 mount_face_y = pivot.y - (installed_horn_top_from_rear
-    - stock_horn_total_thickness-servo_body_depth);
+    - stock_horn_total_thickness-servo_tab_seating_from_rear);
 mount_center_x = pivot.x + servo_body_length/2 - shaft_from_body_end;
 mount_hole_z = pivot.z + mount_hole_z_offset;
 mount_plate_thickness = 1.9;
@@ -62,6 +68,10 @@ cradle_floor_top = 1.65;
 cradle_rail_radius = 3.15;
 cradle_rail_y = mount_face_y+mount_plate_thickness-3.35;
 cradle_straight_edge_y = cradle_rail_y-cradle_rail_radius;
+// Start ring-facing mount members just inside the bore. The bore subtraction
+// trims them back to a shared curved edge through the full ring wall.
+mount_ring_join_x = sqrt(max(0,rim_inner_radius*rim_inner_radius
+    - mount_face_y*mount_face_y))-0.25;
 mount_underside_z = 0; // Same datum as the lens seating shoulder.
 mount_underside_stock = mount_underside_z-0.10;
 upper_bridge_radius = 1.30;
@@ -252,13 +262,26 @@ module far_footing_end(x) {
 // before extruding it so the ring transition and the foot have one edge.
 module integrated_footing(hole_xs) {
     corner_radius = 1.60;
+    tangent_steps = 48;
+    // A quintic runout is horizontal at both ends: tangent to the ring at its
+    // lowest point and tangent to the footing at the near circle's low point.
+    tangent_fill = concat(
+        [for (i = [0:tangent_steps])
+            let(t=i/tangent_steps, eased=t*t*t*(10+t*(-15+6*t)),
+                x=mount_ring_join_x*t)
+            [x,-ring_radius
+                +(cradle_straight_edge_y+ring_radius)*eased]],
+        [for (i = [tangent_steps:-1:0])
+            let(x=mount_ring_join_x*i/tangent_steps)
+            [x,-sqrt(max(0,rim_inner_radius*rim_inner_radius-x*x))]]);
     translate([0,0,mount_underside_stock])
         linear_extrude(height=cradle_floor_top-mount_underside_stock,convexity=8)
             offset(r=-corner_radius,$fn=120)
                 offset(r=corner_radius,$fn=120)
                     union() {
+                        polygon(tangent_fill);
                         hull() {
-                            for (x = [18,hole_xs[0]])
+                            for (x = [mount_ring_join_x,hole_xs[0]])
                                 translate([x,cradle_rail_y])
                                     circle(r=cradle_rail_radius,$fn=120);
                             far_footing_end(hole_xs[1]);
@@ -350,10 +373,10 @@ module servo_front_housing(clearance=0) {
 
 // A flat plate connects the ring to the ear at the height of the rim.
 module ring_ear_plate_web(ear_x) {
-    ring_end_x = 16.5;
     bottom_z = 1.10;
-    translate([ring_end_x,mount_face_y,bottom_z])
-        cube([ear_x-ring_end_x,mount_plate_thickness,rim_height-bottom_z]);
+    translate([mount_ring_join_x,mount_face_y,bottom_z])
+        cube([ear_x-mount_ring_join_x,mount_plate_thickness,
+              rim_height-bottom_z]);
 }
 
 module mount() {
@@ -603,13 +626,14 @@ module lid(angle) {
 
 module servo_envelope() {
     translate([mount_center_x-servo_body_length/2,
-               mount_face_y-servo_body_depth, pivot.z-servo_body_width/2])
-        cube([servo_body_length,servo_body_depth,servo_body_width]);
+               mount_face_y-servo_tab_seating_from_rear,
+               pivot.z-servo_body_width/2])
+        cube([servo_body_length,servo_case_front_from_rear,servo_body_width]);
     servo_rectangular_nose();
     servo_front_housing();
     translate([pivot.x,mount_face_y+housing_shoulder_from_tabs,pivot.z])
         axial_cylinder(shaft_diameter/2,
-            shaft_tip_from_rear-servo_body_depth-housing_shoulder_from_tabs);
+            shaft_tip_from_rear-servo_case_front_from_rear);
 }
 
 if (part == "base") base();

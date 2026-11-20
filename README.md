@@ -2,7 +2,7 @@
 
 A desk-controlled motorized lens cap for the Canon RF 35 mm F1.8 Macro IS STM, using its 52 mm filter thread.
 
-The active design is the direct-drive OpenSCAD model at [models/direct-drive/Direct_Drive.scad](models/direct-drive/Direct_Drive.scad). Each CAD revision is archived as a separate commit at that path. See [hardware and controls](docs/hardware.md) for the DigiKey parts list.
+The active design is the versioned direct-drive OpenSCAD model at [models/direct-drive/Lens_Cap_Direct_Drive_V42.scad](models/direct-drive/Lens_Cap_Direct_Drive_V42.scad). Matching printable exports are under [models/direct-drive/v42](models/direct-drive/v42). See [hardware and controls](docs/hardware.md) for the DigiKey parts list.
 
 ## Shelved designs and research
 

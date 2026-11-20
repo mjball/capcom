@@ -262,11 +262,24 @@ module far_footing_end(x) {
 // before extruding it so the ring transition and the foot have one edge.
 module integrated_footing(hole_xs) {
     corner_radius = 1.60;
+    tangent_steps = 48;
+    // A quintic runout is horizontal at both ends: tangent to the ring at its
+    // lowest point and tangent to the footing at the near circle's low point.
+    tangent_fill = concat(
+        [for (i = [0:tangent_steps])
+            let(t=i/tangent_steps, eased=t*t*t*(10+t*(-15+6*t)),
+                x=mount_ring_join_x*t)
+            [x,-ring_radius
+                +(cradle_straight_edge_y+ring_radius)*eased]],
+        [for (i = [tangent_steps:-1:0])
+            let(x=mount_ring_join_x*i/tangent_steps)
+            [x,-sqrt(max(0,rim_inner_radius*rim_inner_radius-x*x))]]);
     translate([0,0,mount_underside_stock])
         linear_extrude(height=cradle_floor_top-mount_underside_stock,convexity=8)
             offset(r=-corner_radius,$fn=120)
                 offset(r=corner_radius,$fn=120)
                     union() {
+                        polygon(tangent_fill);
                         hull() {
                             for (x = [mount_ring_join_x,hole_xs[0]])
                                 translate([x,cradle_rail_y])
